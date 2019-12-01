@@ -1,0 +1,22 @@
+title: My Health IT Notes
+banner: Health IT
+description: My Health IT Notes
+tabs: []
+blog:
+  perPage: 5
+  author:
+    name: polvcode
+    image: https://en.gravatar.com/userimage/35152960/7140205ee2a71cbe54d3f2ac43c0370d.jpg?size=24
+    website: https://www.polvcode.dev
+    email: patarapolw@gmail.com
+social:
+  twitter: https://twitter.com/patarapolw
+  facebook: https://facebook.com/patarapolw
+  reddit: https://www.reddit.com/user/patarapolw
+  quora: https://www.quora.com/profile/Pacharapol-Withayasakpunt
+  github: https://github.com/patarapolw
+external:
+  disqus: ""
+  google:
+    analytics: ""
+fullUrl: ""

@@ -1,0 +1,38 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "My grand Nuxt.js project",
+  "author": "Pacharapol Withayasakpunt",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt-ts",
+    "build": "nuxt-ts build",
+    "start": "nuxt-ts start",
+    "generate": "nuxt-ts generate",
+    "version": "nuxt --version"
+  },
+  "dependencies": {
+    "@nuxt/typescript-runtime": "^0.2.5",
+    "@nuxtjs/axios": "^5.3.6",
+    "@types/highlight.js": "^9.12.3",
+    "@types/hyperscript": "^0.0.3",
+    "@types/js-yaml": "^3.12.1",
+    "@types/showdown": "^1.9.3",
+    "gray-matter": "^4.0.2",
+    "hyperpug": "^0.2.1",
+    "hyperscript": "^2.0.2",
+    "js-yaml": "^3.13.1",
+    "nuxt": "^2.0.0",
+    "nuxt-property-decorator": "^2.5.0",
+    "pug": "^2.0.4",
+    "pug-plain-loader": "^1.0.0",
+    "sass": "^1.23.7",
+    "sass-loader": "^8.0.0",
+    "showdown": "^1.9.1"
+  },
+  "devDependencies": {
+    "@nuxt/typescript-build": "^0.3.5",
+    "@nuxtjs/vuetify": "^1.0.0",
+    "serve-static": "^1.14.1"
+  }
+}

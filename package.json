@@ -1,0 +1,12 @@
+{
+  "name": "health-it",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "author": "<patarapolw@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "isso": "isso -c isso.cfg run",
+    "web": "cd web && yarn dev"
+  }
+}
