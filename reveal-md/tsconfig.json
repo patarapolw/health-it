@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
+    "target": "es5",
+    "module": "commonjs",
     "moduleResolution": "node",
     "lib": [
       "esnext",
@@ -15,19 +15,8 @@
     "noEmit": true,
     "baseUrl": ".",
     "experimentalDecorators": true,
-    "paths": {
-      "~/*": [
-        "./*"
-      ],
-      "@/*": [
-        "./*"
-      ]
-    },
     "types": [
-      "@types/node",
-      "@nuxt/types",
-      "@nuxt/vue-app",
-      "@nuxtjs/axios"
+      "@types/node"
     ]
   },
   "exclude": [

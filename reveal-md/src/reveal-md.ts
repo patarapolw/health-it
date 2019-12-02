@@ -1,14 +1,5 @@
-<template lang="pug">
-div
-  #global(ref="global")
-  .reveal
-    .slides
-</template>
-
-<script lang="ts">
-import { Vue, Component } from "nuxt-property-decorator";
-import pug, { IHyperPugFilters } from "hyperpug";
-import showdown, { ShowdownExtension } from "showdown";
+import pug from "hyperpug";
+import showdown from "showdown";
 import { HLJSStatic } from "highlight.js";
 import h from "hyperscript";
 import matter from "gray-matter";
@@ -17,7 +8,6 @@ declare global {
   interface Window {
     Reveal: RevealStatic;
     hljs: HLJSStatic;
-    revealMd: RevealMd;
   }
 }
 
@@ -32,25 +22,26 @@ const revealCdn = "https://cdn.jsdelivr.net/npm/reveal.js@3.8.0/";
 const mdConverter = new showdown.Converter();
 mdConverter.setFlavor("github");
 
-@Component({
-  layout: "clear",
-  head() {
-    return {
-      link: [
-        {
-          rel: "stylesheet",
-          type: "text/css",
-          href: `${revealCdn}css/reveal.css`
-        }
-      ],
-      script: [
-        { src: `${revealCdn}js/reveal.min.js` },
-        { src: `${revealCdn}plugin/highlight/highlight.js`, async: true }
-      ]
-    };
+async function main() {
+  let defaults = {
+    headers: {},
+    markdown: ""
   }
-})
-export default class RevealMd extends Vue {
+
+  const url = new URL(location.href);
+  const filename = url.searchParams.get("filename");
+  if (filename) {
+    const { data, content } = matter(await fetch(`/build/slides/${filename}`).then((r) => r.text()));
+    defaults = {
+      headers: data,
+      markdown: content
+    }
+  }
+  
+  new RevealMd(defaults);
+}
+
+export default class RevealMd {
   _headers: any = {};
   _queue: Array<(r?: RevealStatic) => void> = [];
   _markdown: string = "";
@@ -133,7 +124,7 @@ export default class RevealMd extends Vue {
       }
 
       x -= reverseOffset;
-      this._raw[x] = this._raw[x];
+      this._raw[x] = this._raw[x] || [];
 
       return el.split(/\r?\n--\r?\n/g).map((ss, y) => {
         const thisRaw = this.parseSlide(ss);
@@ -159,7 +150,7 @@ export default class RevealMd extends Vue {
             } else {
               const s = document.createElement("section");
               s.append(ss);
-              this.$el.querySelector(".reveal .slides")!.appendChild(s);
+              document.querySelector(".reveal .slides")!.appendChild(s);
             }
           }
 
@@ -199,47 +190,22 @@ export default class RevealMd extends Vue {
 
   get theme() {
     const el = document.getElementById("reveal-theme") as HTMLLinkElement;
-    if (el) {
-      const m = /\/(\S+)\.css$/.exec(el.href);
-      if (m) {
-        return m[1];
-      }
+    const m = /\/(\S+)\.css$/.exec(el.href);
+    if (m) {
+      return m[1];
     }
 
     return "";
   }
 
   set theme(t) {
-    let el = document.getElementById("reveal-theme") as HTMLLinkElement;
-    if (!el) {
-      el = document.createElement("link");
-      Object.assign(el, {
-        id: "reveal-theme",
-        rel: "stylesheet",
-        type: "text/css"
-      });
-      document.head.appendChild(el);
-    }
-
+    const el = document.getElementById("reveal-theme") as HTMLLinkElement;
     el.href = `${revealCdn}/css/theme/${t}.css`;
   }
 
-  async mounted() {
-    if (process.client) {
-      this.theme = "white";
-      window.revealMd = this;
-
-      const { filename } = this.$route.query;
-      if (filename) {
-        this.buildFromString(await fetch(`/build/${filename}`).then((r) => r.text()));
-      }
-    }
-  }
-
-  buildFromString(s: string) {
-    const { data, content } = matter(s);
-    this.headers = data;
-    this.markdown = content;
+  constructor(defaults: any) {
+    this.markdown = defaults.markdown;
+    this.headers = defaults.headers;
   }
 
   mdConvert(s: string) {
@@ -261,7 +227,7 @@ export default class RevealMd extends Vue {
     if (reveal) {
       if (!reveal.isReady()) {
         reveal.initialize();
-        if (this._queue.length > 0) {
+        if (this._queue && this._queue.length > 0) {
           this._queue.forEach(it => it(reveal));
           reveal.slide(-1, -1, -1);
           reveal.sync();
@@ -336,7 +302,7 @@ export default class RevealMd extends Vue {
   }
 
   getSlide(x: number, y?: number) {
-    const s = this.$el.querySelectorAll(".slides > section");
+    const s = document.querySelectorAll(".slides > section");
     const hSlide = s[x];
 
     if (typeof y === "number") {
@@ -350,10 +316,5 @@ export default class RevealMd extends Vue {
     return hSlide;
   }
 }
-</script>
 
-<style lang="scss">
-#global {
-  display: none;
-}
-</style>
+main();

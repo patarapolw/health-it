@@ -1,6 +1,7 @@
 // import colors from 'vuetify/es5/util/colors'
 import yaml from 'js-yaml'
 import fs from 'fs'
+import serveStatic from 'serve-static'
 const config = yaml.safeLoad(fs.readFileSync('../config.yaml'))
 
 export default {
@@ -128,8 +129,10 @@ export default {
     extend (config, ctx) {
     }
   },
-  serverMiddleware: {
-    '/api/config': '~/api/config.ts',
-    '/build': '~/api/build.ts'
-  }
+  serverMiddleware: [
+    { path: '/api/config', handler: '~/api/config.ts' },
+    { path: '/api/dree', handler: '~/api/dree.ts' },
+    { path: '/build', handler: serveStatic('../data') },
+    { path: '/build', handler: serveStatic('../reveal-md/dist') }
+  ]
 }
