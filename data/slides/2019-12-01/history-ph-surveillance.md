@@ -5,6 +5,14 @@ tag:
   - TMHG528
   - public health surveillance
 ---
+// global
+```css
+.container {
+  overflow: scroll;
+  max-height: 90vh;
+}
+```
+===
 
 # The Past
 
@@ -184,7 +192,7 @@ From an analysis of Table 1, it can be seen that three types of information were
 - (iii) Evaluate programs, policies, and control measures [77].
 - (iv) Monitor isolation activities [36, 99].
 - (v) Detect changes in health practice [36].
-- (vi) Document impact of an intervention or progress towards speci�ed public health targets/goals [79].
+- (vi) Document impact of an intervention or progress towards specified public health targets/goals [79].
 
 --
 

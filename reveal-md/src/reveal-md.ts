@@ -3,18 +3,21 @@ import showdown from "showdown";
 import { HLJSStatic } from "highlight.js";
 import h from "hyperscript";
 import matter from "gray-matter";
+// @ts-ignore
+import scopeCss from "scope-css";
 
 declare global {
   interface Window {
     Reveal: RevealStatic;
     hljs: HLJSStatic;
+    revealMd: RevealMd;
   }
 }
 
 export interface ISlide {
-  lang?: string;
-  comment?: string;
-  content: string;
+  id: string;
+  type: "hidden" | "global" | "regular";
+  html: string;
   raw: string;
 }
 
@@ -70,87 +73,50 @@ export default class RevealMd {
   }
 
   set markdown(s: string) {
-    let reverseOffset = 0;
+    const globalEl = document.getElementById("global") as HTMLDivElement;
+    Array.from(globalEl.querySelectorAll("style.ref")).map((el) => el.remove());
 
+    let xOffset = 0;
     const newRaw = s.split(/\r?\n===\r?\n/g).map((el, x) => {
-      const sectionRaw = this.parseSlide(el);
-      if (sectionRaw.comment) {
-        const lines = sectionRaw.comment.split("\n");
-        for (const line of lines) {
-          if (["hidden", "global"].includes(line)) {
-            if (line === "global") {
-              const global = document.getElementById("global");
-              if (global) {
-                let el = global.querySelector("#global--main");
-                if (!el) {
-                  el = document.createElement("div");
-                  el.id = "global--main";
-                  global.appendChild(el);
-                }
-                el.innerHTML = sectionRaw.content;
-                Array.from(el.getElementsByTagName("script")).forEach((el) => {
-                  eval(el.innerHTML);
-                });
-              }
-            }
-
-            reverseOffset++;
-            return null;
-          } else if (line.startsWith("ref=")) {
-            const global = document.getElementById("global");
-            if (global) {
-              const ref = line.split("=")[1];
-              let el = global.querySelector(`#global--${CSS.escape(ref)}`);
-              if (!el) {
-                el = document.createElement("div");
-                el.id = `global--${CSS.escape(ref)}`;
-              }
-              const url = new URL("/api/data", location.origin);
-              url.searchParams.set("filename", ref);
-              fetch(url.href).then((r) => r.text()).then((r) => {
-                if (r) {
-                  el = el!;
-                  el.innerHTML = this.parseSlide(r).content;
-                  global.appendChild(el);
-                  Array.from(el.getElementsByTagName("script")).forEach((el) => {
-                    eval(el.innerHTML);
-                  });
-                }
-              })
-            }
-          }
-        }
-        
+      this._raw[x] = this._raw[x] || [];
+      const newRaw_ss = el.split(/\r?\n--\r?\n/g).map((ss) => this.parseSlide(ss));
+      if (newRaw_ss.every((ss) => !ss.html)) {
+        xOffset++;
       }
 
-      x -= reverseOffset;
-      this._raw[x] = this._raw[x] || [];
+      x -= xOffset;
 
-      return el.split(/\r?\n--\r?\n/g).map((ss, y) => {
-        const thisRaw = this.parseSlide(ss);
+      let yOffset = 0;
+      return newRaw_ss.map((thisRaw, y) => {
+        if (!thisRaw.html) {
+          yOffset++;
+          return;
+        }
 
-        if (!this._raw[x][y] || (this._raw[x][y] && this._raw[x][y].raw !== ss)) {
+        y -= yOffset;
+
+        let section = this.getSlide(x);
+        let subSection = this.getSlide(x, y);
+
+        if (!this._raw[x][y] || (this._raw[x][y] && this._raw[x][y].raw !== thisRaw.raw)) {
           const container = document.createElement("div");
           container.className = "container";
-          container.innerHTML = thisRaw.content;
-
-          let subSection = this.getSlide(x, y);
-          let section = this.getSlide(x);
+          container.innerHTML = thisRaw.html;
 
           if (section && subSection) {
             const oldContainers = subSection.getElementsByClassName("container");
             Array.from(oldContainers).forEach((el) => el.remove());
             subSection.appendChild(container);
           } else {
-            const ss = document.createElement("section");
-            ss.append(container);
+            subSection = document.createElement("section");
+            subSection.append(container);
 
             if (section) {
-              section.appendChild(ss);
+              section.appendChild(subSection);
             } else {
-              const s = document.createElement("section");
-              s.append(ss);
-              document.querySelector(".reveal .slides")!.appendChild(s);
+              section = document.createElement("section");
+              section.appendChild(subSection);
+              document.querySelector(".reveal .slides")!.appendChild(section);
             }
           }
 
@@ -162,8 +128,8 @@ export default class RevealMd {
         }
 
         return thisRaw;
-      });
-    }).filter((el) => el !== null) as ISlide[][];
+      }).filter((el) => el);
+    }).filter((el) => el && el.length > 0) as ISlide[][];
 
     this._raw.map((el, x) => {
       el.map((ss, j) => {
@@ -204,12 +170,19 @@ export default class RevealMd {
   }
 
   constructor(defaults: any) {
+    window.revealMd = this;
     this.markdown = defaults.markdown;
     this.headers = defaults.headers;
   }
 
+  update(raw: string) {
+    const { data, content } = matter(raw);
+    this.markdown = content;
+    this.headers = data;
+  }
+
   mdConvert(s: string) {
-    return mdConverter.makeHtml(s);
+    return s.trim() ? mdConverter.makeHtml(s) : "";
   }
 
   pugConvert(s: string) {
@@ -254,51 +227,75 @@ export default class RevealMd {
   }
 
   parseSlide(text: string): ISlide {
+    const id = hash(text);
     const raw = text;
-    let lang = "";
-
-    const commentLines: string[] = [];
-    const contentLines: string[] = [];
-    let isContent = true;
-
-    for (const line of text.split("\n")) {
-      isContent = true;
-
-      if (contentLines.length === 0 && line.startsWith("// ")) {
-        commentLines.push(line.substr(3));
-        isContent = false;
-      }
-
-      if (lang && line.startsWith("```")) {
-        break;
-      }
-
-      if (contentLines.length === 0 && line.startsWith("```")) {
-        lang = line.substr(3);
-        isContent = false;
-      }
-
-      if (isContent) {
-        contentLines.push(line);
-      }
+    let type: "hidden" | "global" | "regular" = "regular";
+    let html = text;
+    let [firstLine, ...lines] = html.split("\n");
+    const newType = firstLine.substr(3);
+    if (newType === "hidden") {
+      type = "hidden";
+      return { html: "", raw, id, type };
+    } else if (newType === "global") {
+      type = "global";
     }
 
-    lang = lang || "markdown";
+    html = html.replace(/(?:^|\n)\/\/ css=([A-Za-z0-9\-_]+\.css)(?:$|\n)/g, (p0, ref) => {
+      const i = raw.indexOf(p0);
+      const globalEl = document.getElementById("global") as HTMLDivElement;
+      const className = `ref${i}`;
 
-    const comment = commentLines.join("\n");
-    let html = contentLines.join("\n") || text;
+      let el = globalEl.querySelector(`style.ref.${className}`);
+      if (!el) {
+        el = document.createElement("style");
+        el.classList.add("ref", className);
+        globalEl.appendChild(el);
+      }
 
-    switch (lang) {
-      case "markdown": html = this.mdConvert(html); break;
-      case "html": break;
-      case "pug": html = this.pugConvert(html); break;
-      default:
-        const pre = h("pre");
-        pre.innerText = html;
-        html = pre.outerHTML;
+      fetch(ref).then((r) => r.text()).then((content) => {
+        if (type !== "global") {
+          content = scopeCss(content, `#${id}`)
+        }
+        el!.innerHTML = content;
+      })
+      
+      return "";
+    })
+
+    html = html.replace(/(?:^|\n)(\/\/ slide\n)?```(\S+)\n([^]+?)\n```(?:$|\n)/g, (p0, subtype, lang, content) => {
+      if (type !== "global" && !subtype) {
+        return p0;
+      }
+
+      if (lang === "css") {
+        const globalEl = document.getElementById("global") as HTMLDivElement;
+        if (type !== "global") {
+          content = scopeCss(content, `#${id}`)
+        }
+        let el = globalEl.querySelector("style.main");
+        if (!el) {
+          el = document.createElement("style");
+          el.className = "main";
+          globalEl.appendChild(el);
+        }
+        el.innerHTML = content;
+        return "";
+      } else if (lang === "pre") {
+        return h("pre", content).outerHTML;
+      } else if (lang === "pug") {
+        return this.pugConvert(html);
+      }
+
+      return p0;
+    });
+
+    if (type === "global") {
+      return { html: "", raw, id, type };
     }
 
-    return { lang, comment, content: html, raw };
+    return { html: h(`#${id}`, {
+      innerHTML: this.mdConvert(html)
+    }).outerHTML, raw, id, type };
   }
 
   getSlide(x: number, y?: number) {
@@ -315,6 +312,15 @@ export default class RevealMd {
 
     return hSlide;
   }
+}
+
+function hash(str: string) {
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.round(Math.abs(hash)).toString(36);
 }
 
 main();
