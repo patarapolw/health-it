@@ -7,6 +7,10 @@
   "license": "MIT",
   "scripts": {
     "isso": "isso -c isso.cfg run",
+    "reveal-md": "reveal-md ./data",
     "web": "cd web && yarn dev"
+  },
+  "dependencies": {
+    "@patarapolw/reveal-md-cli": "file:reveal-md"
   }
 }

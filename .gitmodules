@@ -1,0 +1,3 @@
+[submodule "reveal-md"]
+	path = reveal-md
+	url = https://github.com/patarapolw/reveal-md.git
