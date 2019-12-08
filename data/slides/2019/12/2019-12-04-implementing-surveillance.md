@@ -89,3 +89,19 @@ The real-time nature of these syndromic systems makes them valuable for bioterro
 - Public Health Investigations
 - Synergies
 - Alarm Thresholds
+
+===
+
+## The revised WHO International Health Regulations and Surveillance for Syndromes
+
+===
+
+## Review of Specific Applications of Syndromic Surveillance That May be of Use in Developing Countries
+
+--
+
+- General Surveillance for Infectious Diseases
+
+===
+
+## Syndromic Surveillance for Sexually Transmitted Infections [STIs]
