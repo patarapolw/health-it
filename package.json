@@ -6,11 +6,6 @@
   "author": "<patarapolw@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "isso": "isso -c isso.cfg run",
-    "reveal": "reveal-md ./data",
-    "web": "cd web && yarn dev"
-  },
-  "dependencies": {
-    "@patarapolw/reveal-md-cli": "file:reveal-md"
+    "reveal": "reveal-md ./data"
   }
 }
