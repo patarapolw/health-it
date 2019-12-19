@@ -6,6 +6,7 @@
   "author": "<patarapolw@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "reveal": "reveal-md ./data"
+    "reveal": "reveal-md ./slides",
+    "blog": "blog-reveal ."
   }
 }
